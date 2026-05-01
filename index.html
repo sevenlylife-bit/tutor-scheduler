@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TutorScheduler</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --border: #E2DDD8;
+    --border2: #CCC8C2;
+    --text: #1A1816;
+    --text2: #6B6560;
+    --text3: #9E9890;
+    --accent: #2D6A4F;
+    --accent-light: #E8F5EE;
+    --accent-text: #1B4332;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --amber: #B7791F;
+    --amber-light: #FEF3C7;
+    --blue: #1D4ED8;
+    --blue-light: #EFF6FF;
+    --purple: #6D28D9;
+    --purple-light: #F5F3FF;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* LAYOUT */
+  .app-shell { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-mark span { font-size: 22px; }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13.5px;
+    font-weight: 400;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: var(--bg); }
+  .nav-item.active {
+    color: var(--accent-text);
+    font-weight: 500;
+    border-left-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .main { margin-left: 220px; padding: 32px; max-width: 900px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* HEADER */
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .card-sm { padding: 14px 16px; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: 0.2px; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+
+  /* DAYS PICKER */
+  .days-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+  .day-pill {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: var(--text2);
+    background: var(--surface);
+  }
+  .day-pill:hover { border-color: var(--accent); color: var(--accent-text); }
+  .day-pill.sel { background: var(--accent); border-color: var(--accent); color: white; }
+  .day-pill.required { background: var(--accent-text); border-color: var(--accent-text); color: white; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-text); border-color: var(--accent-text); }
+  .btn-danger { color: var(--danger); border-color: transparent; background: transparent; padding: 6px 10px; }
+  .btn-danger:hover { background: var(--danger-light); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-green { background: var(--accent-light); color: var(--accent-text); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-gray { background: var(--surface2); color: var(--text2); }
+
+  /* TEACHER CARDS */
+  .teacher-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+  .teacher-body { flex: 1; min-width: 0; }
+  .teacher-name { font-size: 15px; font-weight: 600; }
+  .teacher-meta { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .tag-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .req-day-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 6px; }
+
+  /* SHIFT ITEMS */
+  .shift-day-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 20px 0 8px;
+  }
+  .shift-item { display: flex; align-items: flex-start; gap: 14px; }
+  .shift-time-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    text-align: center;
+    min-width: 90px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .shift-subject { font-weight: 600; font-size: 14px; }
+  .shift-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* AI OUTPUT */
+  .ai-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 120px;
+  }
+  .ai-thinking {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text2);
+    font-size: 13px;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* EMPTY */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* TOGGLE */
+  .collapse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 0 0 16px;
+    user-select: none;
+  }
+  .collapse-header.open { padding-bottom: 0; }
+  .collapse-arrow { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+  .collapse-arrow.open { transform: rotate(180deg); }
+  .collapse-body { display: none; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
+  .collapse-body.open { display: block; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 24px 0 10px;
+  }
+
+  /* BANNER */
+  .banner {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .banner-info { background: var(--blue-light); color: var(--blue); border: 1px solid #BFDBFE; }
+  .banner-warn { background: var(--amber-light); color: var(--amber); border: 1px solid #FDE68A; }
+
+  /* SCHEDULE OUTPUT */
+  .sched-section { margin-bottom: 20px; }
+  .sched-day-title { font-size: 13px; font-weight: 700; color: var(--accent-text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .sched-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .sched-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2); min-width: 90px; }
+  .sched-subj { font-weight: 600; flex: 1; }
+  .sched-teacher { color: var(--accent-text); font-weight: 500; }
+  .conflict-row { border-color: #FECACA; background: var(--danger-light); }
+  .conflict-row .sched-teacher { color: var(--danger); }
+
+  /* SETTINGS */
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .setting-label { font-weight: 500; font-size: 14px; }
+  .setting-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  @media (max-width: 720px) {
+    .sidebar { width: 60px; }
+    .nav-item span:not(.nav-icon) { display: none; }
+    .logo-mark span:last-child { display: none; }
+    .logo-sub { display: none; }
+    .main { margin-left: 60px; padding: 20px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-mark"><span>📅</span> TutorScheduler</div>
+      <div class="logo-sub" id="centre-name-display">My Centre</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item active" onclick="showPage('teachers')"><span class="nav-icon">👩‍🏫</span><span>Teachers</span></div>
+      <div class="nav-item" onclick="showPage('shifts')"><span class="nav-icon">🗓</span><span>Shifts</span></div>
+      <div class="nav-item" onclick="showPage('overrides')"><span class="nav-icon">🔄</span><span>This Week</span></div>
+      <div class="nav-item" onclick="showPage('generate')"><span class="nav-icon">✦</span><span>Generate</span></div>
+      <div class="nav-item" onclick="showPage('schedule')"><span class="nav-icon">📋</span><span>Schedule</span></div>
+      <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+    </div>
+    <div class="sidebar-footer">
+      <div id="stats-display"></div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- TEACHERS -->
+    <div class="page active" id="page-teachers">
+      <div class="page-header">
+        <div class="page-title">Teachers</div>
+        <div class="page-sub">Manage staff, subjects, and availability</div>
+      </div>
+
+      <div class="card">
+        <div class="collapse-header" onclick="toggleCollapse('add-teacher')">
+          <span style="font-weight:600;font-size:14px;">+ Add new teacher</span>
+          <span class="collapse-arrow" id="arrow-add-teacher">▼</span>
+        </div>
+        <div class="collapse-body" id="body-add-teacher">
+          <div class="form-grid">
+            <div class="field"><label>Full name *</label><input id="t-name" placeholder="e.g. Sarah Chen"></div>
+            <div class="field"><label>Email</label><input id="t-email" placeholder="sarah@example.com"></div>
+            <div class="field"><label>Subjects (comma separated)</label><input id="t-subjects" placeholder="e.g. Math, AP Chemistry, Physics"></div>
+            <div class="field"><label>Grade levels</label><input id="t-grades" placeholder="e.g. Grade 9–12, IB, SAT Prep"></div>
+            <div class="field"><label>Max hours / week</label><input id="t-hours" type="number" min="1" max="60" placeholder="20"></div>
+            <div class="field"><label>Preferred time window</label><input id="t-timepref" placeholder="e.g. 3pm–8pm weekdays"></div>
+          </div>
+
+          <div class="field" style="margin-bottom:14px;">
+            <label>Available days <span style="font-weight:400;text-transform:none;color:var(--text3)">(click to toggle)</span></label>
+            <div class="days-picker" id="t-avail-days">
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Mon</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Tue</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Wed</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Thu</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Fri</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Sat</div>
+              <div class="day-pill" onclick="toggleDay(this,'avail')">Sun</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:14px;">
+            <label>Required days <span style="font-weight:400;text-transform:none;color:var(--text3)">(must be scheduled on these days)</span></label>
+            <div class="days-picker" id="t-req-days">
+              <div class="day-pill" onclick="toggleDay(this,'req')">Mon</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Tue</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Wed</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Thu</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Fri</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Sat</div>
+              <div class="day-pill" onclick="toggleDay(this,'req')">Sun</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:14px;">
+            <label>Notes / certifications / restrictions</label>
+            <textarea id="t-notes" placeholder="e.g. Certified IB examiner. Prefers back-to-back sessions. Can't do late evenings."></textarea>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveTeacher()">Save teacher</button>
+            <button class="btn" onclick="toggleCollapse('add-teacher')">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="teachers-list"></div>
+    </div>
+
+    <!-- SHIFTS -->
+    <div class="page" id="page-shifts">
+      <div class="page-header">
+        <div class="page-title">Shifts</div>
+        <div class="page-sub">Your recurring shift template — load each week and tweak as needed</div>
+      </div>
+
+      <!-- Template toolbar -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">Shift template</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;" id="template-status">These are your standard recurring shifts. Save as template after any changes.</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-sm btn-primary" onclick="saveAsTemplate()" title="Save current shifts as your standard weekly template">💾 Save as template</button>
+            <button class="btn btn-sm" onclick="loadTemplate()" title="Reload the saved template (discards unsaved tweaks)">↺ Load template</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="collapse-header" onclick="toggleCollapse('add-shift')">
+          <span style="font-weight:600;font-size:14px;">+ Add shift</span>
+          <span class="collapse-arrow" id="arrow-add-shift">▼</span>
+        </div>
+        <div class="collapse-body" id="body-add-shift">
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Day *</label>
+              <select id="s-day">
+                <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+              </select>
+            </div>
+            <div class="field"><label>Start time *</label><input type="time" id="s-start" value="15:00"></div>
+            <div class="field"><label>End time *</label><input type="time" id="s-end" value="17:00"></div>
+            <div class="field"><label>Subject</label><input id="s-subject" placeholder="e.g. AP Chemistry"></div>
+            <div class="field"><label>Student / group</label><input id="s-student" placeholder="e.g. Grade 11 Group B"></div>
+            <div class="field">
+              <label>Priority</label>
+              <select id="s-priority">
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Requires specific teacher?</label>
+              <select id="s-teacher-req"><option value="">Any qualified teacher</option></select>
+            </div>
+            <div class="field"><label>Additional requirements / notes</label><input id="s-notes" placeholder="e.g. Student has IEP, needs patient teacher"></div>
+          </div>
+          <div class="btn-row" style="margin-top:4px;">
+            <button class="btn btn-primary" onclick="saveShift()">Save shift</button>
+            <button class="btn" onclick="toggleCollapse('add-shift')">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="shifts-list"></div>
+    </div>
+
+    <!-- WEEKLY OVERRIDES -->
+    <div class="page" id="page-overrides">
+      <div class="page-header">
+        <div class="page-title">This week's availability</div>
+        <div class="page-sub">Override any teacher's usual availability for this week only — profiles stay unchanged</div>
+      </div>
+      <div class="banner banner-info" id="overrides-empty-banner" style="display:none;">
+        <span>ℹ️</span><span>Add teachers first, then come back here each week to log any changes.</span>
+      </div>
+      <div id="overrides-list"></div>
+      <div style="margin-top:16px;" id="overrides-clear-row" style="display:none;">
+        <button class="btn btn-sm" onclick="clearOverrides()">↺ Reset all overrides to profile defaults</button>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="page" id="page-generate">
+      <div class="page-header">
+        <div class="page-title">Generate schedule</div>
+        <div class="page-sub">AI will assign teachers to shifts based on all constraints</div>
+      </div>
+
+      <div id="apikey-warning" class="banner banner-warn" style="display:none;">
+        ⚠ No API key set. Go to <strong>Settings → AI connection</strong> and paste your Anthropic API key to enable schedule generation.
+      </div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="field"><label>Week of</label><input type="date" id="g-week"></div>
+          <div class="field"><label>Special instructions this week</label><input id="g-notes" placeholder="e.g. John away Mon–Tue. Prioritise SAT students."></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="generate()">✦ Generate with AI</button>
+          <button class="btn" onclick="generate()">↺ Re-generate</button>
+        </div>
+      </div>
+
+      <div id="gen-status" style="display:none;" class="card">
+        <div class="ai-thinking">
+          <div class="spinner"></div>
+          <span id="gen-status-text">Analysing teachers, shifts, and constraints…</span>
+        </div>
+      </div>
+
+      <div id="gen-output" style="display:none;">
+        <div class="section-label">Generated schedule</div>
+        <div id="gen-output-content"></div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-sm" onclick="showPage('schedule')">View full schedule →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE VIEW -->
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <div class="page-title">This week's schedule</div>
+        <div class="page-sub">Generated assignment overview</div>
+      </div>
+      <div id="schedule-content"><div class="empty"><div class="empty-icon">📋</div>No schedule generated yet. Go to Generate to create one.</div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure your tutoring centre</div>
+      </div>
+
+      <div class="card">
+        <div class="section-label" style="margin-top:0;">AI connection</div>
+        <div class="field" style="margin-bottom:10px;">
+          <label>Anthropic API key</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="cfg-apikey" type="password" placeholder="sk-ant-..." style="flex:1;font-family:'DM Mono',monospace;font-size:13px;">
+            <button class="btn btn-sm" onclick="toggleApiKeyVisibility()">Show</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
+          Your key is saved only in <strong>your browser</strong> — never sent anywhere except directly to Anthropic to generate schedules.
+          Get a free key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a> → API Keys.
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
+        <span id="apikey-status" style="margin-left:10px;font-size:12px;color:var(--text3);"></span>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="section-label" style="margin-top:0;">Centre info</div>
+        <div class="form-grid">
+          <div class="field"><label>Centre name</label><input id="cfg-name" placeholder="e.g. Bright Minds Tutoring"></div>
+          <div class="field"><label>Location / city</label><input id="cfg-city" placeholder="e.g. Calgary, AB"></div>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Scheduling notes (always included in AI prompt)</label>
+          <textarea id="cfg-rules" placeholder="e.g. We prefer teachers work min 2h blocks. No teacher should exceed 30h/week. Always try to match teacher to same student."></textarea>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="section-label" style="margin-top:0;">Data management</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Export all data</div><div class="setting-sub">Download a JSON backup of all teachers, shifts, and settings</div></div>
+          <button class="btn btn-sm" onclick="exportData()">Export JSON</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Import data</div><div class="setting-sub">Restore from a JSON backup file</div></div>
+          <label class="btn btn-sm" style="cursor:pointer;">Import <input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+        </div>
+        <div class="setting-row" style="border-bottom:none;">
+          <div><div class="setting-label" style="color:var(--danger);">Clear all data</div><div class="setting-sub">Remove all teachers, shifts, and schedule data</div></div>
+          <button class="btn btn-sm btn-danger" onclick="clearAll()">Clear all</button>
+        </div>
+      </div>
+
+      <div class="banner banner-info" style="margin-top:16px;">
+        <span>ℹ️</span>
+        <div>
+          <strong>Sharing with other centres:</strong> Each centre opens this HTML file in their browser and gets their own separate data — nothing is shared between centres. You can also distribute this file by email, USB, or any file-sharing link. No internet account needed; the AI key is built in.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const NS = 'tts_'; // namespace for localStorage
+let teachers = load('teachers') || [];
+let shifts   = load('shifts')   || [];
+let settings = load('settings') || { name: '', city: '', rules: '' };
+let lastScheduleText = load('lastSchedule') || null;
+
+function load(k)  { try { return JSON.parse(localStorage.getItem(NS+k)); } catch { return null; } }
+function persist(k,v) { localStorage.setItem(NS+k, JSON.stringify(v)); }
+function saveAll() { persist('teachers',teachers); persist('shifts',shifts); persist('settings',settings); }
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (p === 'shifts') populateTeacherSelect();
+  if (p === 'settings') loadSettingsForm();
+  if (p === 'teachers') renderTeachers();
+  if (p === 'shifts') renderShifts();
+  if (p === 'overrides') renderOverrides();
+  if (p === 'schedule') renderScheduleView();
+  if (p === 'generate') {
+    const warn = document.getElementById('apikey-warning');
+    if (warn) warn.style.display = localStorage.getItem('tts_apikey') ? 'none' : 'flex';
+  }
+  updateSidebar();
+}
+
+function updateSidebar() {
+  document.getElementById('centre-name-display').textContent = settings.name || 'My Centre';
+  document.getElementById('stats-display').textContent = `${teachers.length} teachers · ${shifts.length} shifts`;
+}
+
+// ── COLLAPSE ───────────────────────────────────────────────────────────────
+function toggleCollapse(id) {
+  const body  = document.getElementById('body-'+id);
+  const arrow = document.getElementById('arrow-'+id);
+  const hdr   = body.previousElementSibling;
+  const open  = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+  hdr.classList.toggle('open', open);
+}
+
+// ── DAYS PICKER ────────────────────────────────────────────────────────────
+function toggleDay(pill, type) {
+  if (type === 'avail') pill.classList.toggle('sel');
+  else pill.classList.toggle('required');
+}
+function getSelectedDays(containerId, cls) {
+  return [...document.querySelectorAll('#'+containerId+' .'+cls)].map(el => el.textContent);
+}
+
+// ── TEACHERS ───────────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  ['#E8F5EE','#1B4332'],['#EFF6FF','#1D4ED8'],['#F5F3FF','#5B21B6'],
+  ['#FEF3C7','#92400E'],['#FCE7F3','#9D174D'],['#E0F2FE','#0C4A6E']
+];
+
+function initials(name) { return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function saveTeacher() {
+  const name = document.getElementById('t-name').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const subjects = document.getElementById('t-subjects').value.split(',').map(s=>s.trim()).filter(Boolean);
+
+  teachers.push({
+    id: Date.now(),
+    name,
+    email:     document.getElementById('t-email').value.trim(),
+    subjects,
+    grades:    document.getElementById('t-grades').value.trim(),
+    maxHours:  document.getElementById('t-hours').value || '20',
+    timePref:  document.getElementById('t-timepref').value.trim(),
+    availDays: getSelectedDays('t-avail-days','sel'),
+    reqDays:   getSelectedDays('t-req-days','required'),
+    notes:     document.getElementById('t-notes').value.trim()
+  });
+  saveAll();
+
+  // reset form
+  ['t-name','t-email','t-subjects','t-grades','t-hours','t-timepref','t-notes'].forEach(id => document.getElementById(id).value='');
+  document.querySelectorAll('#t-avail-days .sel').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('#t-req-days .required').forEach(el=>el.classList.remove('required'));
+  toggleCollapse('add-teacher');
+  renderTeachers();
+  updateSidebar();
+}
+
+function deleteTeacher(id) {
+  if (!confirm('Remove this teacher?')) return;
+  teachers = teachers.filter(t=>t.id!==id);
+  saveAll(); renderTeachers(); updateSidebar();
+}
+
+function editTeacher(id) {
+  const t = teachers.find(t => t.id === id);
+  if (!t) return;
+
+  // Close any other open edit forms first
+  document.querySelectorAll('.inline-edit-form').forEach(el => el.remove());
+  document.querySelectorAll('.teacher-view-row').forEach(el => el.style.display = 'flex');
+
+  const card = document.getElementById('tc-' + id);
+  const viewRow = card.querySelector('.teacher-view-row');
+  viewRow.style.display = 'none';
+
+  const allDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const availPills = allDays.map(d =>
+    `<div class="day-pill ${t.availDays.includes(d)?'sel':''}" onclick="toggleDay(this,'avail')">${d}</div>`).join('');
+  const reqPills = allDays.map(d =>
+    `<div class="day-pill ${t.reqDays.includes(d)?'required':''}" onclick="toggleDay(this,'req')">${d}</div>`).join('');
+
+  const form = document.createElement('div');
+  form.className = 'inline-edit-form';
+  form.style.cssText = 'border-top:1px solid var(--border);margin-top:12px;padding-top:16px;';
+  form.innerHTML = `
+    <div class="form-grid" style="margin-bottom:12px;">
+      <div class="field"><label>Full name</label><input id="et-name-${id}" value="${esc(t.name)}"></div>
+      <div class="field"><label>Email</label><input id="et-email-${id}" value="${esc(t.email||'')}"></div>
+      <div class="field"><label>Subjects (comma separated)</label><input id="et-subjects-${id}" value="${esc(t.subjects.join(', '))}"></div>
+      <div class="field"><label>Grade levels</label><input id="et-grades-${id}" value="${esc(t.grades||'')}"></div>
+      <div class="field"><label>Max hours / week</label><input id="et-hours-${id}" type="number" value="${esc(t.maxHours||'20')}"></div>
+      <div class="field"><label>Preferred time window</label><input id="et-timepref-${id}" value="${esc(t.timePref||'')}"></div>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Available days</label>
+      <div class="days-picker" id="et-avail-${id}">${availPills}</div>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Required days <span style="font-weight:400;text-transform:none;color:var(--text3)">(must be scheduled)</span></label>
+      <div class="days-picker" id="et-req-${id}">${reqPills}</div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Notes / certifications / restrictions</label>
+      <textarea id="et-notes-${id}">${esc(t.notes||'')}</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveEditTeacher(${id})">Save changes</button>
+      <button class="btn" onclick="cancelEditTeacher(${id})">Cancel</button>
+    </div>`;
+  card.appendChild(form);
+}
+
+function esc(s) { return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function cancelEditTeacher(id) {
+  const card = document.getElementById('tc-' + id);
+  card.querySelector('.inline-edit-form')?.remove();
+  card.querySelector('.teacher-view-row').style.display = 'flex';
+}
+
+function saveEditTeacher(id) {
+  const idx = teachers.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const name = document.getElementById(`et-name-${id}`).value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const subjects = document.getElementById(`et-subjects-${id}`).value.split(',').map(s=>s.trim()).filter(Boolean);
+
+  teachers[idx] = {
+    ...teachers[idx],
+    name,
+    email:     document.getElementById(`et-email-${id}`).value.trim(),
+    subjects,
+    grades:    document.getElementById(`et-grades-${id}`).value.trim(),
+    maxHours:  document.getElementById(`et-hours-${id}`).value || '20',
+    timePref:  document.getElementById(`et-timepref-${id}`).value.trim(),
+    availDays: getSelectedDays(`et-avail-${id}`, 'sel'),
+    reqDays:   getSelectedDays(`et-req-${id}`, 'required'),
+    notes:     document.getElementById(`et-notes-${id}`).value.trim()
+  };
+  saveAll(); renderTeachers(); updateSidebar();
+  showToast(`${name} updated`);
+}
+
+function renderTeachers() {
+  const el = document.getElementById('teachers-list');
+  if (!teachers.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👩‍🏫</div>No teachers yet. Add your first one above.</div>`;
+    return;
+  }
+  el.innerHTML = teachers.map((t,i) => {
+    const [bg,fg] = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const subjBadges = t.subjects.map(s=>`<span class="badge badge-blue">${s}</span>`).join('');
+    const availBadges = t.availDays.map(d=>`<span class="badge badge-green">${d}</span>`).join('');
+    const reqBadges = t.reqDays.map(d=>`<span class="badge badge-amber">★ ${d}</span>`).join('');
+    return `<div class="card card-sm" id="tc-${t.id}">
+      <div class="teacher-item teacher-view-row">
+        <div class="avatar" style="background:${bg};color:${fg}">${initials(t.name)}</div>
+        <div class="teacher-body">
+          <div class="teacher-name">${t.name}</div>
+          <div class="teacher-meta">${[t.email, t.grades ? t.grades : null, `Max ${t.maxHours}h/wk`].filter(Boolean).join(' · ')}</div>
+          <div class="tag-row" style="margin-top:6px;">${subjBadges}</div>
+          ${t.availDays.length ? `<div class="tag-row"><span style="font-size:11px;color:var(--text3);margin-right:2px;">Available:</span>${availBadges}</div>` : ''}
+          ${t.reqDays.length ? `<div class="tag-row"><span style="font-size:11px;color:var(--amber);margin-right:2px;">Required:</span>${reqBadges}</div>` : ''}
+          ${t.timePref ? `<div style="margin-top:4px;font-size:12px;color:var(--text2);">⏱ ${t.timePref}</div>` : ''}
+          ${t.notes ? `<div style="margin-top:4px;font-size:12px;color:var(--text2);">${t.notes}</div>` : ''}
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sm" onclick="editTeacher(${t.id})">Edit</button>
+          <button class="btn btn-danger" onclick="deleteTeacher(${t.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SHIFT TEMPLATES ────────────────────────────────────────────────────────
+let shiftTemplate = load('shiftTemplate') || null;
+
+function saveAsTemplate() {
+  if (!shifts.length) { alert('No shifts to save as template.'); return; }
+  shiftTemplate = JSON.parse(JSON.stringify(shifts)); // deep copy
+  persist('shiftTemplate', shiftTemplate);
+  updateTemplateStatus();
+  showToast('Template saved — ' + shifts.length + ' shifts');
+}
+
+function loadTemplate() {
+  if (!shiftTemplate || !shiftTemplate.length) { alert('No template saved yet. Add your shifts and click "Save as template" first.'); return; }
+  if (shifts.length && !confirm('Load template? This will replace your current shifts for this week.')) return;
+  // Give each a fresh ID so edits don't bleed back into template
+  shifts = shiftTemplate.map(s => ({ ...s, id: Date.now() + Math.random() }));
+  saveAll(); renderShifts(); updateSidebar(); updateTemplateStatus();
+  showToast('Template loaded — ' + shifts.length + ' shifts ready to tweak');
+}
+
+function updateTemplateStatus() {
+  const el = document.getElementById('template-status');
+  if (!el) return;
+  if (shiftTemplate && shiftTemplate.length) {
+    el.innerHTML = `Template saved: <strong>${shiftTemplate.length} shifts</strong>. Load each week and make any tweaks before generating.`;
+  } else {
+    el.textContent = 'No template saved yet. Add your standard shifts below, then click "Save as template".';
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--surface);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none;font-family:DM Sans,sans-serif;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+// ── SHIFTS ─────────────────────────────────────────────────────────────────
+function populateTeacherSelect() {
+  const sel = document.getElementById('s-teacher-req');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Any qualified teacher</option>' +
+    teachers.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function saveShift() {
+  const subject = document.getElementById('s-subject').value.trim();
+  const tId = document.getElementById('s-teacher-req').value;
+  const tName = tId ? (teachers.find(t=>t.id==tId)?.name || '') : '';
+  shifts.push({
+    id: Date.now(),
+    day:        document.getElementById('s-day').value,
+    start:      document.getElementById('s-start').value,
+    end:        document.getElementById('s-end').value,
+    subject,
+    student:    document.getElementById('s-student').value.trim(),
+    priority:   document.getElementById('s-priority').value,
+    teacherReq: tName,
+    notes:      document.getElementById('s-notes').value.trim()
+  });
+  saveAll();
+  ['s-subject','s-student','s-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('s-teacher-req').value = '';
+  document.getElementById('s-priority').value = 'normal';
+  toggleCollapse('add-shift');
+  renderShifts(); updateSidebar();
+}
+
+function deleteShift(id) {
+  shifts = shifts.filter(s=>s.id!==id);
+  saveAll(); renderShifts(); updateSidebar();
+}
+
+const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function priorityBadge(p) {
+  if (p==='critical') return `<span class="badge badge-red">Critical</span>`;
+  if (p==='high')     return `<span class="badge badge-amber">High</span>`;
+  return '';
+}
+
+function renderShifts() {
+  const el = document.getElementById('shifts-list');
+  if (!shifts.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🗓</div>No shifts yet. Add what needs covering this week.</div>`;
+    return;
+  }
+  let html = '';
+  DAYS_ORDER.forEach(day => {
+    const ds = shifts.filter(s=>s.day===day).sort((a,b)=>a.start.localeCompare(b.start));
+    if (!ds.length) return;
+    html += `<div class="shift-day-header">${day}</div>`;
+    ds.forEach(s => {
+      html += `<div class="card card-sm">
+        <div class="shift-item">
+          <div class="shift-time-block">${s.start}<br>${s.end}</div>
+          <div style="flex:1;">
+            <div class="shift-subject">${s.subject}</div>
+            <div class="shift-detail">${[s.student||'', s.teacherReq ? '★ Req: '+s.teacherReq : ''].filter(Boolean).join(' · ')}</div>
+            ${s.notes ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.notes}</div>` : ''}
+          </div>
+          ${priorityBadge(s.priority)}
+          <button class="btn btn-danger" onclick="deleteShift(${s.id})">✕</button>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+// ── WEEKLY OVERRIDES ────────────────────────────────────────────────────────
+// overrides = { [teacherId]: { type: 'unavailable'|'available'|'hours', days: [], hours: '', note: '' } }
+let overrides = load('overrides') || {};
+
+function saveOverrides() { persist('overrides', overrides); }
+
+function clearOverrides() {
+  if (!confirm('Reset all overrides? Teachers will revert to their profile availability.')) return;
+  overrides = {}; saveOverrides(); renderOverrides();
+}
+
+function getOverride(tid) { return overrides[tid] || null; }
+
+function renderOverrides() {
+  const el = document.getElementById('overrides-list');
+  const banner = document.getElementById('overrides-empty-banner');
+  if (!teachers.length) { banner.style.display='flex'; el.innerHTML=''; return; }
+  banner.style.display = 'none';
+
+  el.innerHTML = teachers.map((t, i) => {
+    const [bg,fg] = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const ov = getOverride(t.id);
+    const hasOverride = ov && (ov.type !== 'none');
+    const statusBadge = hasOverride
+      ? `<span class="badge badge-amber">⚠ Override active</span>`
+      : `<span class="badge badge-green">Using profile defaults</span>`;
+
+    const ovType   = ov?.type   || 'none';
+    const ovDays   = ov?.days   || [];
+    const ovHours  = ov?.hours  || '';
+    const ovNote   = ov?.note   || '';
+
+    const allDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    const unavailPills = allDays.map(d => {
+      const sel = ovType==='unavailable' && ovDays.includes(d);
+      return `<div class="day-pill ${sel?'sel':''}" onclick="toggleOvDay(${t.id},'unavailable','${d}',this)">${d}</div>`;
+    }).join('');
+
+    const availPills = allDays.map(d => {
+      const sel = ovType==='available' && ovDays.includes(d);
+      return `<div class="day-pill ${sel?'sel':''}" onclick="toggleOvDay(${t.id},'available','${d}',this)">${d}</div>`;
+    }).join('');
+
+    return `<div class="card" id="ov-card-${t.id}">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div class="avatar" style="background:${bg};color:${fg};width:36px;height:36px;font-size:13px;">${initials(t.name)}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;">${t.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Profile: ${t.availDays.join(', ')||'flexible'} · ${t.timePref||'any hours'}</div>
+        </div>
+        ${statusBadge}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--danger);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Unavailable this week</div>
+          <div class="days-picker" id="ov-unavail-${t.id}">${unavailPills}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Extra availability this week</div>
+          <div class="days-picker" id="ov-avail-${t.id}">${availPills}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;" class="field">
+        <label>Hours override this week <span style="font-weight:400;text-transform:none;color:var(--text3)">(leave blank to use profile)</span></label>
+        <input id="ov-hours-${t.id}" placeholder="e.g. 4pm–9pm, or 10am–3pm Sat only"
+          value="${ovHours}"
+          oninput="saveOvField(${t.id},'hours',this.value)"
+          style="max-width:320px;">
+      </div>
+
+      <div style="margin-top:8px;" class="field">
+        <label>Note <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional context for AI)</span></label>
+        <input id="ov-note-${t.id}" placeholder="e.g. Covering for a colleague, only available if needed"
+          value="${ovNote}"
+          oninput="saveOvField(${t.id},'note',this.value)"
+          style="max-width:400px;">
+      </div>
+
+      ${hasOverride ? `<div style="margin-top:10px;"><button class="btn btn-sm btn-danger" onclick="clearTeacherOverride(${t.id})">✕ Clear override for ${t.name}</button></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleOvDay(tid, type, day, pill) {
+  if (!overrides[tid]) overrides[tid] = { type: 'none', days: [], hours: '', note: '' };
+  const ov = overrides[tid];
+
+  // If clicking unavailable, clear available for same day and vice versa
+  const opposite = type === 'unavailable' ? 'available' : 'unavailable';
+  const oppContainer = document.getElementById(`ov-${opposite}-${tid}`);
+  if (oppContainer) {
+    oppContainer.querySelectorAll('.day-pill').forEach(p => {
+      if (p.textContent === day) p.classList.remove('sel');
+    });
+    ov.days = ov.days.filter(d => d !== day || ov.type === type);
+  }
+
+  pill.classList.toggle('sel');
+  const isNowSelected = pill.classList.contains('sel');
+
+  if (isNowSelected) {
+    ov.type = type;
+    if (!ov.days.includes(day)) ov.days.push(day);
+  } else {
+    ov.days = ov.days.filter(d => d !== day);
+    if (!ov.days.length) ov.type = 'none';
+  }
+
+  saveOverrides();
+  // refresh just the badge on this card without full re-render
+  const card = document.getElementById(`ov-card-${tid}`);
+  const badge = card.querySelector('.badge');
+  const hasOverride = ov.days.length > 0 || ov.hours || ov.note;
+  badge.className = hasOverride ? 'badge badge-amber' : 'badge badge-green';
+  badge.textContent = hasOverride ? '⚠ Override active' : 'Using profile defaults';
+}
+
+function saveOvField(tid, field, value) {
+  if (!overrides[tid]) overrides[tid] = { type: 'none', days: [], hours: '', note: '' };
+  overrides[tid][field] = value;
+  saveOverrides();
+}
+
+function clearTeacherOverride(tid) {
+  delete overrides[tid];
+  saveOverrides();
+  renderOverrides();
+}
+
+function buildOverrideSummary() {
+  if (!Object.keys(overrides).length) return '';
+  const lines = [];
+  teachers.forEach(t => {
+    const ov = overrides[t.id];
+    if (!ov) return;
+    const parts = [];
+    if (ov.type === 'unavailable' && ov.days.length) parts.push(`UNAVAILABLE on: ${ov.days.join(', ')}`);
+    if (ov.type === 'available'   && ov.days.length) parts.push(`Extra available on: ${ov.days.join(', ')}`);
+    if (ov.hours) parts.push(`Hours this week: ${ov.hours}`);
+    if (ov.note)  parts.push(`Note: ${ov.note}`);
+    if (parts.length) lines.push(`${t.name}: ${parts.join(' | ')}`);
+  });
+  return lines.length ? `\nWEEKLY AVAILABILITY OVERRIDES (these override the profile for this week only):\n${lines.join('\n')}` : '';
+}
+
+
+async function generate() {
+  if (!teachers.length) { alert('Add at least one teacher first.'); return; }
+  if (!shifts.length)   { alert('Add at least one shift first.'); return; }
+
+  const apiKey = localStorage.getItem('tts_apikey');
+  if (!apiKey) {
+    document.getElementById('apikey-warning').style.display = 'flex';
+    return;
+  }
+  document.getElementById('apikey-warning').style.display = 'none';
+
+  document.getElementById('gen-status').style.display = 'block';
+  document.getElementById('gen-output').style.display = 'none';
+  document.getElementById('gen-status-text').textContent = 'Analysing teachers, shifts, and constraints…';
+
+  const weekVal  = document.getElementById('g-week').value;
+  const extraNotes = document.getElementById('g-notes').value.trim();
+
+  const teacherData = teachers.map(t => [
+    `Name: ${t.name}`,
+    `Subjects: ${t.subjects.length ? t.subjects.join(', ') : 'general (no specific subjects)'}`,
+    `Grades: ${t.grades||'any'}`,
+    `MaxHours: ${t.maxHours}/week`,
+    `AvailableDays: ${t.availDays.join(', ')||'flexible'}`,
+    `REQUIRED_DAYS (must work): ${t.reqDays.join(', ')||'none'}`,
+    `PreferredHours: ${t.timePref||'flexible'}`,
+    `Notes: ${t.notes||'none'}`
+  ].join(' | ')).join('\n');
+
+  const shiftData = shifts.map(s => [
+    `Day: ${s.day}`,
+    `Time: ${s.start}–${s.end}`,
+    `Subject: ${s.subject || 'any (no subject specified)'}`,
+    `Student: ${s.student||'unspecified'}`,
+    `RequiredTeacher: ${s.teacherReq||'any qualified'}`,
+    `Priority: ${s.priority}`,
+    `Notes: ${s.notes||'none'}`
+  ].join(' | ')).join('\n');
+
+  const centreRules = settings.rules ? `\nCENTRE RULES:\n${settings.rules}` : '';
+  const centreName  = settings.name  ? `Centre: ${settings.name}` : '';
+  const overrideSummary = buildOverrideSummary();
+
+  const prompt = `You are an expert scheduling assistant for a tutoring company. ${centreName}
+
+TEACHERS (permanent profiles):
+${teacherData}
+${overrideSummary}
+SHIFTS TO FILL${weekVal ? ' (week of '+weekVal+')' : ''}:
+${shiftData}
+${centreRules}
+EXTRA NOTES THIS WEEK: ${extraNotes||'None'}
+
+CONSTRAINTS TO HONOUR (in priority order):
+1. WEEKLY OVERRIDES — if a teacher is marked unavailable on a day this week, do NOT assign them. Extra available days are bonus days they can cover.
+2. REQUIRED_DAYS — if a teacher has required days, they MUST appear in the schedule on those days (unless overridden as unavailable). Flag if unresolvable.
+3. Subject matching: if a shift specifies a subject, only assign teachers who list that subject in their profile. If a shift has no subject, any available teacher can cover it. If a teacher has no subjects listed, they are a general tutor and can cover any shift that has no specific subject requirement — do NOT assign them to subject-specific shifts unless they are explicitly required.
+4. Teacher must be available on that day (per profile, adjusted by overrides).
+5. RequiredTeacher assignments must be honoured exactly.
+6. Do not exceed MaxHours per teacher.
+7. Distribute workload fairly.
+
+OUTPUT FORMAT — use exactly this structure:
+
+## Schedule
+**Monday**
+- 15:00–17:00 | AP Chemistry | Sarah Chen | Grade 11 Group B
+(list all assigned shifts per day, skip days with no shifts)
+
+## Unassigned / Conflicts
+- List any shift that could not be filled and why (subject gap, no availability, etc.)
+- List any teacher with REQUIRED_DAYS who has no shifts assigned on those days
+
+## Teacher summary
+- Sarah Chen: 4h assigned (max 20h)
+(one line per teacher, show hours assigned vs max)`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.error?.message || `HTTP ${res.status}`;
+      document.getElementById('gen-status').style.display = 'none';
+      document.getElementById('gen-output').style.display = 'block';
+      document.getElementById('gen-output-content').innerHTML = `<div class="banner banner-warn">⚠ API error: ${msg}. Please check your API key in Settings and make sure your Anthropic account has credits at console.anthropic.com.</div>`;
+      return;
+    }
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('') || 'No response received.';
+    persist('lastSchedule', text);
+    lastScheduleText = text;
+    document.getElementById('gen-status').style.display = 'none';
+    document.getElementById('gen-output').style.display = 'block';
+    document.getElementById('gen-output-content').innerHTML = renderAIText(text);
+  } catch(e) {
+    document.getElementById('gen-status-text').textContent = 'Error: '+e.message;
+  }
+}
+
+function renderAIText(text) {
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^## (.+)$/gm, '<div class="section-label" style="margin-top:20px;margin-bottom:8px;">$1</div>')
+    .replace(/^\*\*(.+)\*\*$/gm, '<div class="sched-day-title">$1</div>')
+    .replace(/^- (\d{2}:\d{2}[–\-]\d{2}:\d{2}) \| (.+?) \| (.+?) \| (.+)$/gm,
+      `<div class="sched-row"><span class="sched-time">$1</span><span class="sched-subj">$2</span><span class="sched-teacher">$3</span><span class="badge badge-gray">$4</span></div>`)
+    .replace(/^- (.+)$/gm, '<div style="padding:6px 0;font-size:13px;color:var(--text2);">• $1</div>');
+  return `<div>${html}</div>`;
+}
+
+function renderScheduleView() {
+  const el = document.getElementById('schedule-content');
+  if (!lastScheduleText) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>No schedule generated yet. Go to Generate to create one.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="card">${renderAIText(lastScheduleText)}</div>`;
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────────────────
+function loadSettingsForm() {
+  document.getElementById('cfg-name').value   = settings.name  || '';
+  document.getElementById('cfg-city').value   = settings.city  || '';
+  document.getElementById('cfg-rules').value  = settings.rules || '';
+  document.getElementById('cfg-apikey').value = localStorage.getItem('tts_apikey') || '';
+  const hasKey = !!localStorage.getItem('tts_apikey');
+  document.getElementById('apikey-status').textContent = hasKey ? '✓ Key saved' : '';
+}
+
+function toggleApiKeyVisibility() {
+  const inp = document.getElementById('cfg-apikey');
+  const btn = inp.nextElementSibling;
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+  else { inp.type = 'password'; btn.textContent = 'Show'; }
+}
+
+function saveSettings() {
+  settings.name  = document.getElementById('cfg-name').value.trim();
+  settings.city  = document.getElementById('cfg-city').value.trim();
+  settings.rules = document.getElementById('cfg-rules').value.trim();
+  const key = document.getElementById('cfg-apikey').value.trim();
+  if (key) localStorage.setItem('tts_apikey', key);
+  else localStorage.removeItem('tts_apikey');
+  saveAll();
+  updateSidebar();
+  const status = document.getElementById('apikey-status');
+  status.textContent = key ? '✓ Key saved' : 'Key cleared';
+  setTimeout(() => { status.textContent = key ? '✓ Key saved' : ''; }, 2000);
+  showToast('Settings saved');
+}
+
+// ── EXPORT / IMPORT ────────────────────────────────────────────────────────
+function exportData() {
+  const data = JSON.stringify({ teachers, shifts, shiftTemplate, settings, exportedAt: new Date().toISOString() }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `tutorscheduler-${(settings.name||'data').replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importData(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (!confirm(`Import data from ${file.name}? This will replace your current teachers, shifts, and settings.`)) return;
+      teachers     = d.teachers     || [];
+      shifts       = d.shifts       || [];
+      shiftTemplate= d.shiftTemplate|| null;
+      settings     = d.settings     || {};
+      saveAll(); persist('shiftTemplate', shiftTemplate);
+      updateSidebar(); renderTeachers(); updateTemplateStatus();
+      alert('Data imported successfully.');
+    } catch { alert('Invalid file.'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!confirm('Clear ALL data? This cannot be undone.')) return;
+  teachers = []; shifts = []; settings = {}; lastScheduleText = null; overrides = {}; shiftTemplate = null;
+  saveAll(); persist('lastSchedule', null); persist('overrides', {}); persist('shiftTemplate', null);
+  location.reload();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+renderTeachers();
+renderShifts();
+updateSidebar();
+updateTemplateStatus();
+document.getElementById('g-week').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
